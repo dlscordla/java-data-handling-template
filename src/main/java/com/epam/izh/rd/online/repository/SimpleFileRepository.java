@@ -1,60 +1,91 @@
 package com.epam.izh.rd.online.repository;
 
+import java.io.*;
+import java.nio.file.*;
+
 public class SimpleFileRepository implements FileRepository {
 
-    /**
-     * Метод рекурсивно подсчитывает количество файлов в директории
-     *
-     * @param path путь до директори
-     * @return файлов, в том числе скрытых
-     */
+
     @Override
     public long countFilesInDirectory(String path) {
-        return 0;
+        int count = 0;
+        File folder = new File("src/main/resources/" + path);
+        File[] folders = folder.listFiles();
+        for (File file : folders) {
+            if (file.isFile()) {
+                count++;
+            }
+            if (file.isDirectory()) {
+                count += countFilesInDirectory(path + "/" + file.getName());
+            }
+        }
+        return count;
     }
 
-    /**
-     * Метод рекурсивно подсчитывает количество папок в директории, считая корень
-     *
-     * @param path путь до директории
-     * @return число папок
-     */
+
     @Override
     public long countDirsInDirectory(String path) {
-        return 0;
+        File folder = new File("src/main/resources/" + path);
+        File[] listFolder = folder.listFiles();
+        long count = 1;
+        if (listFolder != null) {
+            for (File file : listFolder) {
+                if (file.isDirectory()) {
+                    count += countDirsInDirectory(path + "/" + file.getName());
+                }
+            }
+        }
+        return count;
     }
 
-    /**
-     * Метод копирует все файлы с расширением .txt
-     *
-     * @param from путь откуда
-     * @param to   путь куда
-     */
+
     @Override
     public void copyTXTFiles(String from, String to) {
-        return;
+        File source = new File(from).getParentFile();
+        File destination = new File(to).getParentFile();
+        File[] folder = source.listFiles();
+        if (!destination.exists()) {
+            destination.mkdirs();
+        }
+        for (File file : folder) {
+            if (file.isFile() && file.getName().endsWith(".txt")) {
+                try {
+                    Files.copy(file.toPath(), new File(destination + "/" + file.getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
-    /**
-     * Метод создает файл на диске с расширением txt
-     *
-     * @param path путь до нового файла
-     * @param name имя файла
-     * @return был ли создан файл
-     */
+
     @Override
     public boolean createFile(String path, String name) {
+        File folder = new File(getClass().getResource("/").getPath() + path);
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
+        File file = new File(folder.getPath() + "/" + name);
+        try {
+            return file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return false;
     }
 
-    /**
-     * Метод считывает тело файла .txt из папки src/main/resources
-     *
-     * @param fileName имя файла
-     * @return контент
-     */
+
     @Override
     public String readFileFromResources(String fileName) {
-        return null;
+        StringBuilder textBuilder = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/" + fileName))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                textBuilder.append(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return textBuilder.toString();
     }
 }

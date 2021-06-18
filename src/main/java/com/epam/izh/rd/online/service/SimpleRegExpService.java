@@ -1,27 +1,44 @@
 package com.epam.izh.rd.online.service;
 
+import java.io.*;
+import java.util.regex.*;
+
 public class SimpleRegExpService implements RegExpService {
 
-    /**
-     * Метод должен читать файл sensitive_data.txt (из директории resources) и маскировать в нем конфиденциальную информацию.
-     * Номер счета должен содержать только первые 4 и последние 4 цифры (1234 **** **** 5678). Метод должен содержать регулярное
-     * выражение для поиска счета.
-     *
-     * @return обработанный текст
-     */
+
     @Override
     public String maskSensitiveData() {
-        return null;
+        String originalText = null;
+        String maskedText;
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader("src/main/resources/sensitive_data.txt"))) {
+            originalText = bufferedReader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Pattern pattern = Pattern.compile("(\\d{4})\\s\\d{4}\\s\\d{4}\\s(\\d{4})");
+        Matcher matcher = pattern.matcher(originalText);
+        maskedText = matcher.replaceAll("$1 **** **** $2");
+        return maskedText;
     }
 
-    /**
-     * Метод должен считыввать файл sensitive_data.txt (из директории resources) и заменять плейсхолдер ${payment_amount} и ${balance} на заданные числа. Метод должен
-     * содержать регулярное выражение для поиска плейсхолдеров
-     *
-     * @return обработанный текст
-     */
+
     @Override
     public String replacePlaceholders(double paymentAmount, double balance) {
-        return null;
+        String newText = null;
+        try (BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/sensitive_data.txt"))) {
+            newText = reader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Pattern pattern = Pattern.compile("\\$\\{.*?}");
+        Matcher matcher = pattern.matcher(newText);
+        while (matcher.find()) {
+            if (matcher.group().equals("${payment_amount}")) {
+                newText = newText.replaceAll("\\$\\{payment_amount}", "" + (int)paymentAmount);
+            } else if (matcher.group().equals("${balance}")) {
+                newText = newText.replaceAll("\\$\\{balance}", "" + (int)balance);
+            }
+        }
+        return newText;
     }
 }
